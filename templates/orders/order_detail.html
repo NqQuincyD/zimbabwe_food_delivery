@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Order #{{ order.id }} - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Order #{{ order.id }}</h2>
+        <a href="{% url 'orders:order_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Orders
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Order Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Order Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="badge {% if order.status == 'PENDING' %}bg-warning text-dark{% elif order.status == 'ACCEPTED' or order.status == 'PREPARING' %}bg-primary{% elif order.status == 'READY_FOR_PICKUP' or order.status == 'PICKED_UP' or order.status == 'DELIVERING' %}bg-info{% elif order.status == 'DELIVERED' %}bg-success{% else %}bg-danger{% endif %} p-2">
+                            {{ order.get_status_display }}
+                        </span>
+                        <span class="text-muted">
+                            Ordered: {{ order.ordered_at|date:"M d, Y H:i" }}
+                        </span>
+                    </div>
+                    
+                    <!-- Status update form for restaurant owners -->
+                    {% if user_type == 'RESTAURANT' and order.status != 'DELIVERED' and order.status != 'CANCELLED' %}
+                        <form method="post" action="{% url 'orders:update_order_status' pk=order.id %}" class="mb-4">
+                            {% csrf_token %}
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto">
+                                    <label for="id_status" class="col-form-label">Update Status:</label>
+                                </div>
+                                <div class="col-auto">
+                                    <select name="status" id="id_status" class="form-select">
+                                        {% if order.status == 'PENDING' %}
+                                            <option value="ACCEPTED">Accept Order</option>
+                                            <option value="CANCELLED">Cancel Order</option>
+                                        {% elif order.status == 'ACCEPTED' %}
+                                            <option value="PREPARING">Preparing</option>
+                                            <option value="CANCELLED">Cancel Order</option>
+                                        {% elif order.status == 'PREPARING' %}
+                                            <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+                    
+                    <!-- Status update form for drivers -->
+                    {% if user_type == 'DRIVER' and order.driver == user and order.status != 'DELIVERED' and order.status != 'CANCELLED' %}
+                        <form method="post" action="{% url 'orders:update_order_status' pk=order.id %}" class="mb-4">
+                            {% csrf_token %}
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto">
+                                    <label for="id_status" class="col-form-label">Update Status:</label>
+                                </div>
+                                <div class="col-auto">
+                                    <select name="status" id="id_status" class="form-select">
+                                        {% if order.status == 'READY_FOR_PICKUP' %}
+                                            <option value="PICKED_UP">Picked Up</option>
+                                        {% elif order.status == 'PICKED_UP' %}
+                                            <option value="DELIVERING">Delivering</option>
+                                        {% elif order.status == 'DELIVERING' %}
+                                            <option value="DELIVERED">Delivered</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+                    
+                    <!-- Order tracking timeline -->
+                    <div class="order-timeline">
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="rounded-circle {% if order.status != 'CANCELLED' %}bg-success{% else %}bg-secondary{% endif %} text-white d-flex align-items-center justify-content-center mx-auto" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <h6 class="mt-2">Order Placed</h6>
+                                <p class="small text-muted">{{ order.ordered_at|date:"g:i A" }}</p>
+                            </div>
+                            
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="rounded-circle {% if order.status == 'ACCEPTED' or order.status == 'PREPARING' or order.status == 'READY_FOR_PICKUP' or order.status == 'PICKED_UP' or order.status == 'DELIVERING' or order.status == 'DELIVERED' %}bg-success{% else %}bg-secondary{% endif %} text-white d-flex align-items-center justify-content-center mx-auto" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <h6 class="mt-2">Preparing</h6>
+                                {% if order.accepted_at %}
+                                    <p class="small text-muted">{{ order.accepted_at|date:"g:i A" }}</p>
+                                {% else %}
+                                    <p class="small text-muted">-</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="rounded-circle {% if order.status == 'PICKED_UP' or order.status == 'DELIVERING' or order.status == 'DELIVERED' %}bg-success{% else %}bg-secondary{% endif %} text-white d-flex align-items-center justify-content-center mx-auto" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-motorcycle"></i>
+                                </div>
+                                <h6 class="mt-2">On Delivery</h6>
+                                {% if order.picked_up_at %}
+                                    <p class="small text-muted">{{ order.picked_up_at|date:"g:i A" }}</p>
+                                {% else %}
+                                    <p class="small text-muted">-</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="rounded-circle {% if order.status == 'DELIVERED' %}bg-success{% else %}bg-secondary{% endif %} text-white d-flex align-items-center justify-content-center mx-auto" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <h6 class="mt-2">Delivered</h6>
+                                {% if order.delivered_at %}
+                                    <p class="small text-muted">{{ order.delivered_at|date:"g:i A" }}</p>
+                                {% else %}
+                                    <p class="small text-muted">-</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if tracking %}
+                        <div class="mt-4">
+                            <h6>Detailed Tracking</h6>
+                            <ul class="list-group">
+                                {% for track in tracking %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge {% if track.status == 'PENDING' %}bg-warning text-dark{% elif track.status == 'ACCEPTED' or track.status == 'PREPARING' %}bg-primary{% elif track.status == 'READY_FOR_PICKUP' or track.status == 'PICKED_UP' or track.status == 'DELIVERING' %}bg-info{% elif track.status == 'DELIVERED' %}bg-success{% else %}bg-danger{% endif %} me-2">
+                                                {{ track.get_status_display }}
+                                            </span>
+                                            {{ track.note }}
+                                        </div>
+                                        <small class="text-muted">{{ track.timestamp|date:"M d, g:i A" }}</small>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Order Items -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ item.menu_item.name }}</div>
+                                            {% if item.selected_options.all %}
+                                                <div class="small text-muted">
+                                                    {% for option in item.selected_options.all %}
+                                                        {{ option.option_choice.option.name }}: {{ option.option_choice.value }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            {% if item.special_instructions %}
+                                                <div class="small text-muted">
+                                                    <strong>Special:</strong> {{ item.special_instructions }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end">${{ item.price }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td colspan="2" class="text-end fw-bold">Subtotal:</td>
+                                    <td class="text-end">${{ order.total_price|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end fw-bold">Delivery Fee:</td>
+                                    <td class="text-end">${{ order.delivery_fee|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end fw-bold">Total:</td>
+                                    <td class="text-end fw-bold">${{ order.total_price|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Driver Information (if assigned) -->
+            {% if order.driver %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Delivery Driver</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            {% if order.driver.profile_picture %}
+                                <img src="{{ order.driver.profile_picture.url }}" alt="{{ order.driver.get_full_name }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                    <span class="h3 mb-0">{{ order.driver.get_full_name|default:order.driver.username|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">{{ order.driver.get_full_name|default:order.driver.username }}</h5>
+                                <p class="text-muted mb-0">{{ order.driver.phone_number }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if order.status == 'DELIVERED' and user_type == 'CUSTOMER' %}
+                            <div class="text-end mt-3">
+                                <a href="{% url 'driver_review' order_id=order.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-star me-1"></i> Rate Delivery
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif order.status == 'READY_FOR_PICKUP' and user_type == 'RESTAURANT' %}
+                <!-- Pending delivery requests -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Delivery Requests</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if order.delivery_requests.exists %}
+                            <div class="list-group">
+                                {% for request in order.delivery_requests.all %}
+                                    {% if request.status == 'PENDING' %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    {% if request.driver.profile_picture %}
+                                                        <img src="{{ request.driver.profile_picture.url }}" alt="{{ request.driver.get_full_name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                            <span class="h5 mb-0">{{ request.driver.get_full_name|default:request.driver.username|first|upper }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <h6 class="mb-0">{{ request.driver.get_full_name|default:request.driver.username }}</h6>
+                                                        <p class="text-muted mb-0 small">Requested: {{ request.created_at|timesince }} ago</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <a href="{% url 'delivery:accept_delivery_request' request_id=request.id %}" class="btn btn-sm btn-success me-1">Accept</a>
+                                                    <a href="{% url 'delivery:decline_delivery_request' request_id=request.id %}" class="btn btn-sm btn-danger">Decline</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center mb-0">No driver has requested to deliver this order yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Customer Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Customer</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ order.customer.get_full_name|default:order.customer.username }}</h6>
+                    <p class="text-muted mb-0">{{ order.customer.phone_number }}</p>
+                </div>
+            </div>
+            
+            <!-- Restaurant Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Restaurant</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ order.restaurant.logo.url }}" alt="{{ order.restaurant.name }}" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                        <div>
+                            <h6 class="mb-0">{{ order.restaurant.name }}</h6>
+                            <div class="rating small">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= order.restaurant.average_rating|floatformat:"0" %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif forloop.counter <= order.restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="text-muted">{{ order.restaurant.average_rating|floatformat:1 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2 text-muted"></i>{{ order.restaurant.address }}, {{ order.restaurant.city }}
+                    </div>
+                    <div>
+                        <i class="fas fa-phone me-2 text-muted"></i>{{ order.restaurant.phone_number }}
+                    </div>
+                    
+                    {% if order.status == 'DELIVERED' and user_type == 'CUSTOMER' %}
+                        <div class="mt-3 text-end">
+                            <a href="{% url 'reviews:restaurant_review' restaurant_id=order.restaurant.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-star me-1"></i> Write a Review
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Delivery Address -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Delivery Address</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ order.delivery_address.name }}</h6>
+                    <p class="mb-0">{{ order.delivery_address.street }}</p>
+                    <p class="mb-0">{{ order.delivery_address.city }}, {{ order.delivery_address.state_province }}</p>
+                    {% if order.delivery_address.landmark %}
+                        <p class="mb-0">Landmark: {{ order.delivery_address.landmark }}</p>
+                    {% endif %}
+                    
+                    {% if order.delivery_instructions %}
+                        <div class="mt-3">
+                            <h6>Delivery Instructions:</h6>
+                            <p class="mb-0">{{ order.delivery_instructions }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Payment Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Payment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Payment Method:</span>
+                        <span>
+                            {% if order.payment_method == 'CASH' %}
+                                <i class="fas fa-money-bill-wave me-1 text-success"></i> Cash on Delivery
+                            {% elif order.payment_method == 'ECOCASH' %}
+                                <i class="fas fa-mobile-alt me-1 text-primary"></i> EcoCash
+                            {% elif order.payment_method == 'CARD' %}
+                                <i class="far fa-credit-card me-1 text-info"></i> Credit/Debit Card
+                            {% else %}
+                                {{ order.payment_method }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Payment Status:</span>
+                        <span>
+                            {% if order.is_paid %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

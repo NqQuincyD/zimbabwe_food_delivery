@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign Up - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Create an Account</h2>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">I want to join as a:</label>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 text-center">
+                                        <input class="form-check-input" type="radio" name="user_type" id="customer" value="CUSTOMER" checked>
+                                        <label class="form-check-label w-100" for="customer">
+                                            <i class="fas fa-user fa-2x mb-2 text-primary"></i>
+                                            <h5>Customer</h5>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 text-center">
+                                        <input class="form-check-input" type="radio" name="user_type" id="restaurant" value="RESTAURANT">
+                                        <label class="form-check-label w-100" for="restaurant">
+                                            <i class="fas fa-store fa-2x mb-2 text-primary"></i>
+                                            <h5>Restaurant</h5>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 text-center">
+                                        <input class="form-check-input" type="radio" name="user_type" id="driver" value="DRIVER">
+                                        <label class="form-check-label w-100" for="driver">
+                                            <i class="fas fa-motorcycle fa-2x mb-2 text-primary"></i>
+                                            <h5>Driver</h5>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{ form|crispy }}
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Sign Up</button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <p>Already have an account? <a href="{% url 'account_login' %}">Log In</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

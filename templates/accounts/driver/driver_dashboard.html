@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Driver Dashboard - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Driver Dashboard</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Availability Status</h5>
+                    <div class="mt-3 mb-3">
+                        {% if user.driver_profile.is_available %}
+                            <span class="badge bg-success p-2">Available</span>
+                        {% else %}
+                            <span class="badge bg-danger p-2">Unavailable</span>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'accounts:driver_toggle_availability' %}" class="btn btn-primary">
+                        {% if user.driver_profile.is_available %}
+                            Set as Unavailable
+                        {% else %}
+                            Set as Available
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Active Deliveries</h5>
+                    <div class="display-4 my-3">{{ active_deliveries|length }}</div>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-primary">View Active Deliveries</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Available Orders</h5>
+                    <div class="display-4 my-3">{{ available_orders|default:0 }}</div>
+                    <a href="{% url 'delivery:available_orders' %}" class="btn btn-primary">Find Orders</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Pending Delivery Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if delivery_requests %}
+                        <div class="list-group">
+                            {% for request in delivery_requests %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Order #{{ request.order.id }}</h6>
+                                            <p class="text-muted mb-1 small">{{ request.order.restaurant.name }}</p>
+                                            <p class="text-muted mb-0 small">Requested: {{ request.created_at|timesince }} ago</p>
+                                        </div>
+                                        <a href="{% url 'orders:order_detail' pk=request.order.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+                            <p>No pending delivery requests</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Active Deliveries</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_deliveries %}
+                        <div class="list-group">
+                            {% for order in active_deliveries %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Order #{{ order.id }}</h6>
+                                            <p class="text-muted mb-1 small">{{ order.restaurant.name }}</p>
+                                            <p class="mb-0">
+                                                <span class="badge {% if order.status == 'PICKED_UP' %}bg-warning{% else %}bg-info{% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-sm btn-primary">Manage</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-motorcycle fa-3x mb-3 text-muted"></i>
+                            <p>No active deliveries</p>
+                            <a href="{% url 'delivery:available_orders' %}" class="btn btn-sm btn-primary mt-2">Find Orders</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Completed Deliveries</h5>
+        </div>
+        <div class="card-body">
+            {% if completed_deliveries %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Restaurant</th>
+                                <th>Customer</th>
+                                <th>Delivered</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in completed_deliveries %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.restaurant.name }}</td>
+                                    <td>{{ order.customer.get_full_name }}</td>
+                                    <td>{{ order.delivered_at|date:"M d, Y H:i" }}</td>
+                                    <td>${{ order.total_price }}</td>
+                                    <td>
+                                        <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x mb-3 text-muted"></i>
+                    <p>No completed deliveries yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

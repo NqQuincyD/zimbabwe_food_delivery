@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Profile - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="rounded-circle img-thumbnail mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                            <span class="display-4">{{ user.get_full_name|default:user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                    
+                    <h5 class="card-title mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted mb-3">{{ user.get_user_type_display }}</p>
+                    
+                    {% if user.user_type == 'DRIVER' %}
+                        <div class="mb-3">
+                            <a href="{% url 'accounts:driver_toggle_availability' %}" class="btn btn-sm {% if user.driver_profile.is_available %}btn-success{% else %}btn-danger{% endif %} w-100">
+                                {% if user.driver_profile.is_available %}
+                                    <i class="fas fa-toggle-on me-1"></i> Available
+                                {% else %}
+                                    <i class="fas fa-toggle-off me-1"></i> Unavailable
+                                {% endif %}
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                        <a href="{% url 'accounts:address_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> My Addresses
+                        </a>
+                        <a href="{% url 'orders:order_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-clipboard-list me-2"></i> My Orders
+                        </a>
+                        {% if user.user_type == 'RESTAURANT' %}
+                            <a href="{% url 'restaurants:restaurant_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-store me-2"></i> My Restaurants
+                            </a>
+                        {% elif user.user_type == 'DRIVER' %}
+                            <a href="{% url 'accounts:driver_dashboard' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-tachometer-alt me-2"></i> Driver Dashboard
+                            </a>
+                            <a href="{% url 'delivery:available_orders' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-motorcycle me-2"></i> Available Orders
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'account_logout' %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Personal Information</h5>
+                                {{ user_form|crispy }}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Profile Picture</h5>
+                                {{ profile_picture_form|crispy }}
+                                
+                                {% if profile_form %}
+                                    <h5 class="mt-4 mb-3">
+                                        {% if user.user_type == 'CUSTOMER' %}
+                                            Customer Information
+                                        {% elif user.user_type == 'DRIVER' %}
+                                            Driver Information
+                                        {% endif %}
+                                    </h5>
+                                    {{ profile_form|crispy }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="text-end mt-3">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

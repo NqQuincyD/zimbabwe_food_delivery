@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Restaurant Dashboard - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, {{ user.get_full_name|default:user.username }}</h2>
+        <div class="badge bg-primary p-2">Restaurant Account</div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Today's Orders</h5>
+                    <p class="display-4">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Completed Orders</h5>
+                    <p class="display-4">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Average Rating</h5>
+                    <p class="display-4">0.0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <p class="display-4">$0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Pending Orders</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-check fa-3x mb-3 text-muted"></i>
+                        <h5>No pending orders</h5>
+                        <p class="text-muted">New orders will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-primary">
+                            <i class="fas fa-store me-2"></i>Manage Restaurant
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-utensils me-2"></i>Update Menu
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-2"></i>Settings
+                        </a>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user me-2"></i>My Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

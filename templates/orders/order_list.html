@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Orders - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Your Orders</h2>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <ul class="nav nav-tabs card-header-tabs" id="ordersTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="current-tab" data-bs-toggle="tab" data-bs-target="#current-orders" type="button" role="tab" aria-controls="current-orders" aria-selected="true">Current Orders</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="past-tab" data-bs-toggle="tab" data-bs-target="#past-orders" type="button" role="tab" aria-controls="past-orders" aria-selected="false">Past Orders</button>
+                </li>
+                {% if user_type == 'RESTAURANT' %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-orders" type="button" role="tab" aria-controls="pending-orders" aria-selected="false">Pending Orders</button>
+                    </li>
+                {% endif %}
+                {% if user_type == 'DRIVER' %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="available-tab" data-bs-toggle="tab" data-bs-target="#available-orders" type="button" role="tab" aria-controls="available-orders" aria-selected="false">Available Orders</button>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="ordersTabContent">
+                <!-- Current Orders Tab -->
+                <div class="tab-pane fade show active" id="current-orders" role="tabpanel" aria-labelledby="current-tab" tabindex="0">
+                    {% with current_orders=orders|dictsortreversed:"ordered_at"|slice:":20" %}
+                        {% if current_orders %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            {% if user_type == 'CUSTOMER' %}
+                                                <th>Restaurant</th>
+                                            {% elif user_type == 'RESTAURANT' %}
+                                                <th>Customer</th>
+                                            {% elif user_type == 'DRIVER' %}
+                                                <th>Restaurant</th>
+                                                <th>Customer</th>
+                                            {% endif %}
+                                            <th>Order Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in current_orders %}
+                                            {% if order.status != 'DELIVERED' and order.status != 'CANCELLED' %}
+                                                <tr>
+                                                    <td>{{ order.id }}</td>
+                                                    {% if user_type == 'CUSTOMER' %}
+                                                        <td>{{ order.restaurant.name }}</td>
+                                                    {% elif user_type == 'RESTAURANT' %}
+                                                        <td>{{ order.customer.get_full_name }}</td>
+                                                    {% elif user_type == 'DRIVER' %}
+                                                        <td>{{ order.restaurant.name }}</td>
+                                                        <td>{{ order.customer.get_full_name }}</td>
+                                                    {% endif %}
+                                                    <td>{{ order.ordered_at|date:"M d, Y H:i" }}</td>
+                                                    <td>${{ order.total_price }}</td>
+                                                    <td>
+                                                        <span class="badge {% if order.status == 'PENDING' %}bg-warning text-dark{% elif order.status == 'ACCEPTED' %}bg-info{% elif order.status == 'PREPARING' %}bg-primary{% elif order.status == 'READY_FOR_PICKUP' %}bg-success{% elif order.status == 'PICKED_UP' or order.status == 'DELIVERING' %}bg-primary{% endif %}">
+                                                            {{ order.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-sm btn-primary">
+                                                            View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-clipboard-list fa-3x mb-3 text-muted"></i>
+                                <h5>No current orders</h5>
+                                {% if user_type == 'CUSTOMER' %}
+                                    <p class="text-muted">Browse restaurants and place your first order</p>
+                                    <a href="{% url 'restaurants:restaurant_list' %}" class="btn btn-primary mt-2">Browse Restaurants</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <!-- Past Orders Tab -->
+                <div class="tab-pane fade" id="past-orders" role="tabpanel" aria-labelledby="past-tab" tabindex="0">
+                    {% with past_orders=orders|dictsortreversed:"ordered_at"|slice:":20" %}
+                        {% if past_orders %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            {% if user_type == 'CUSTOMER' %}
+                                                <th>Restaurant</th>
+                                            {% elif user_type == 'RESTAURANT' %}
+                                                <th>Customer</th>
+                                            {% elif user_type == 'DRIVER' %}
+                                                <th>Restaurant</th>
+                                                <th>Customer</th>
+                                            {% endif %}
+                                            <th>Order Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in past_orders %}
+                                            {% if order.status == 'DELIVERED' or order.status == 'CANCELLED' %}
+                                                <tr>
+                                                    <td>{{ order.id }}</td>
+                                                    {% if user_type == 'CUSTOMER' %}
+                                                        <td>{{ order.restaurant.name }}</td>
+                                                    {% elif user_type == 'RESTAURANT' %}
+                                                        <td>{{ order.customer.get_full_name }}</td>
+                                                    {% elif user_type == 'DRIVER' %}
+                                                        <td>{{ order.restaurant.name }}</td>
+                                                        <td>{{ order.customer.get_full_name }}</td>
+                                                    {% endif %}
+                                                    <td>{{ order.ordered_at|date:"M d, Y H:i" }}</td>
+                                                    <td>${{ order.total_price }}</td>
+                                                    <td>
+                                                        <span class="badge {% if order.status == 'DELIVERED' %}bg-success{% else %}bg-danger{% endif %}">
+                                                            {{ order.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-sm btn-outline-primary">
+                                                            View
+                                                        </a>
+                                                        {% if user_type == 'CUSTOMER' and order.status == 'DELIVERED' %}
+                                                            <a href="{% url 'reviews:restaurant_review' restaurant_id=order.restaurant.id %}" class="btn btn-sm btn-outline-secondary">
+                                                                Review
+                                                            </a>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-history fa-3x mb-3 text-muted"></i>
+                                <h5>No past orders</h5>
+                                <p class="text-muted">Your order history will appear here</p>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                
+                {% if user_type == 'RESTAURANT' %}
+                    <!-- Pending Orders Tab -->
+                    <div class="tab-pane fade" id="pending-orders" role="tabpanel" aria-labelledby="pending-tab" tabindex="0">
+                        {% with pending_orders=orders|dictsortreversed:"ordered_at"|slice:":20" %}
+                            {% if pending_orders %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Order #</th>
+                                                <th>Customer</th>
+                                                <th>Order Date</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in pending_orders %}
+                                                {% if order.status == 'PENDING' %}
+                                                    <tr>
+                                                        <td>{{ order.id }}</td>
+                                                        <td>{{ order.customer.get_full_name }}</td>
+                                                        <td>{{ order.ordered_at|date:"M d, Y H:i" }}</td>
+                                                        <td>${{ order.total_price }}</td>
+                                                        <td>
+                                                            <span class="badge bg-warning text-dark">
+                                                                {{ order.get_status_display }}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-sm btn-primary">
+                                                                Manage
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-clipboard-check fa-3x mb-3 text-muted"></i>
+                                    <h5>No pending orders</h5>
+                                    <p class="text-muted">New orders will appear here</p>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+                
+                {% if user_type == 'DRIVER' %}
+                    <!-- Available Orders Tab -->
+                    <div class="tab-pane fade" id="available-orders" role="tabpanel" aria-labelledby="available-tab" tabindex="0">
+                        <div class="text-center mb-3">
+                            <a href="{% url 'delivery:available_orders' %}" class="btn btn-primary">Find Available Orders</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

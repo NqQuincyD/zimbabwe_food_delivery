@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage {{ restaurant.name }} - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage {{ restaurant.name }}</h2>
+        <div>
+            <a href="{% url 'restaurants:restaurant_update' pk=restaurant.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-1"></i> Edit Restaurant
+            </a>
+            <a href="{% url 'restaurants:restaurant_detail' slug=restaurant.slug %}" class="btn btn-primary ms-2">
+                <i class="fas fa-eye me-1"></i> View Restaurant
+            </a>
+        </div>
+    </div>
+    
+    <!-- Status card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <h5>Restaurant Status</h5>
+                    {% if restaurant.is_approved %}
+                        <span class="badge bg-success p-2">Approved</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark p-2">Pending Approval</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 text-center">
+                    <h5>Current Status</h5>
+                    {% if restaurant.is_open %}
+                        <span class="badge bg-success p-2" id="status-badge">Open</span>
+                    {% else %}
+                        <span class="badge bg-danger p-2" id="status-badge">Closed</span>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-primary mt-2" id="toggle-status-btn" data-restaurant-id="{{ restaurant.id }}">Toggle Status</button>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h5>Orders Today</h5>
+                    <span class="display-6">{{ today_orders|length }}</span>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h5>Rating</h5>
+                    <div class="rating">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= restaurant.average_rating|floatformat:"0" %}
+                                <i class="fas fa-star"></i>
+                            {% elif forloop.counter <= restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                <i class="fas fa-star-half-alt"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <p class="mb-0">{{ restaurant.average_rating|floatformat:1 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="restaurantManageTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders-tab-pane" type="button" role="tab" aria-controls="orders-tab-pane" aria-selected="true">Orders</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="menu-tab" data-bs-toggle="tab" data-bs-target="#menu-tab-pane" type="button" role="tab" aria-controls="menu-tab-pane" aria-selected="false">Menu</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="hours-tab" data-bs-toggle="tab" data-bs-target="#hours-tab-pane" type="button" role="tab" aria-controls="hours-tab-pane" aria-selected="false">Hours</button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="restaurantManageTabContent">
+        <!-- Orders Tab -->
+        <div class="tab-pane fade show active" id="orders-tab-pane" role="tabpanel" aria-labelledby="orders-tab" tabindex="0">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Pending Orders</h5>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-primary">View All Orders</a>
+                </div>
+                <div class="card-body">
+                    {% if pending_orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Customer</th>
+                                        <th>Time</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in pending_orders %}
+                                        <tr>
+                                            <td>{{ order.id }}</td>
+                                            <td>{{ order.customer.get_full_name }}</td>
+                                            <td>{{ order.ordered_at|date:"g:i A" }}</td>
+                                            <td>{{ order.items.count }} items</td>
+                                            <td>${{ order.total_price }}</td>
+                                            <td>
+                                                <span class="badge {% if order.status == 'PENDING' %}bg-warning text-dark{% elif order.status == 'ACCEPTED' %}bg-info{% elif order.status == 'PREPARING' %}bg-primary{% else %}bg-success{% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-sm btn-primary">Manage</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-check fa-3x mb-3 text-muted"></i>
+                            <h5>No pending orders</h5>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Menu Tab -->
+        <div class="tab-pane fade" id="menu-tab-pane" role="tabpanel" aria-labelledby="menu-tab" tabindex="0">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Menu Items</h5>
+                    <a href="{% url 'restaurants:menuitem_create' restaurant_id=restaurant.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add Menu Item
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if menu_items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Features</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in menu_items %}
+                                        <tr>
+                                            <td>{{ item.name }}</td>
+                                            <td>{{ item.category.name|default:"Uncategorized" }}</td>
+                                            <td>${{ item.price }}</td>
+                                            <td>
+                                                {% if item.is_available %}
+                                                    <span class="badge bg-success">Available</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Unavailable</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.is_featured %}
+                                                    <span class="badge bg-warning text-dark">Featured</span>
+                                                {% endif %}
+                                                {% if item.is_vegetarian %}
+                                                    <span class="badge bg-success">Vegetarian</span>
+                                                {% endif %}
+                                                {% if item.is_vegan %}
+                                                    <span class="badge bg-success">Vegan</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="{% url 'restaurants:menuitem_update' pk=item.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'restaurants:menuitem_delete' pk=item.id %}" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-utensils fa-3x mb-3 text-muted"></i>
+                            <h5>No menu items yet</h5>
+                            <p class="text-muted">Start adding delicious items to your menu</p>
+                            <a href="{% url 'restaurants:menuitem_create' restaurant_id=restaurant.id %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-1"></i> Add Menu Item
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hours Tab -->
+        <div class="tab-pane fade" id="hours-tab-pane" role="tabpanel" aria-labelledby="hours-tab" tabindex="0">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Operating Hours</h5>
+                    <a href="{% url 'restaurants:restaurant_hours_create' restaurant_id=restaurant.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add Hours
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if hours %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Opening Time</th>
+                                        <th>Closing Time</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for hour in hours %}
+                                        <tr>
+                                            <td>{{ hour.get_day_display }}</td>
+                                            <td>{{ hour.opening_time|time:"g:i A" }}</td>
+                                            <td>{{ hour.closing_time|time:"g:i A" }}</td>
+                                            <td>
+                                                {% if hour.is_closed %}
+                                                    <span class="badge bg-danger">Closed</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Open</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'restaurants:restaurant_hours_update' pk=hour.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clock fa-3x mb-3 text-muted"></i>
+                            <h5>No operating hours set</h5>
+                            <p class="text-muted">Let customers know when you're open for business</p>
+                            <a href="{% url 'restaurants:restaurant_hours_create' restaurant_id=restaurant.id %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-1"></i> Set Operating Hours
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggle-status-btn');
+    const statusBadge = document.getElementById('status-badge');
+    
+    toggleBtn.addEventListener('click', function() {
+        const restaurantId = this.dataset.restaurantId;
+        
+        // Disable button during request
+        toggleBtn.disabled = true;
+        
+        fetch(`/restaurants/${restaurantId}/toggle-status/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update the status badge
+                statusBadge.textContent = data.is_open ? 'Open' : 'Closed';
+                statusBadge.className = `badge p-2 ${data.is_open ? 'bg-success' : 'bg-danger'}`;
+                
+                // Show a toast or alert
+                alert(data.message);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the status');
+        })
+        .finally(() => {
+            // Re-enable button
+            toggleBtn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

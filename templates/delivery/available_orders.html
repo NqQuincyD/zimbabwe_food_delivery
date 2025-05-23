@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Available Orders - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Available Orders</h2>
+        <div>
+            <span class="h6 me-2">Status:</span>
+            {% if user.driver_profile.is_available %}
+                <span class="badge bg-success p-2">Available</span>
+            {% else %}
+                <span class="badge bg-danger p-2">Unavailable</span>
+                <a href="{% url 'accounts:driver_toggle_availability' %}" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-toggle-on me-1"></i> Set Available
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Available Orders -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Orders Ready for Pickup</h5>
+                </div>
+                <div class="card-body">
+                    {% if available_orders %}
+                        <div class="row g-3">
+                            {% for order in available_orders %}
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <img src="{{ order.restaurant.logo.url }}" alt="{{ order.restaurant.name }}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <div>
+                                                    <h5 class="mb-0">{{ order.restaurant.name }}</h5>
+                                                    <p class="text-muted mb-0 small">{{ order.restaurant.address }}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted">Order #{{ order.id }}</span>
+                                                    <span class="fw-bold">${{ order.total_price }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted">Items:</span>
+                                                    <span>{{ order.items.count }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted">Distance:</span>
+                                                    <span>~3.2 km</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted">Time:</span>
+                                                    <span>{{ order.ordered_at|timesince }} ago</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-grid gap-2">
+                                                <a href="{% url 'orders:order_detail' pk=order.id %}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-info-circle me-1"></i> View Details
+                                                </a>
+                                                <a href="{% url 'delivery:request_delivery' order_id=order.id %}" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-motorcycle me-1"></i> Request Delivery
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x mb-3 text-muted"></i>
+                            <h5>No orders available for pickup</h5>
+                            <p class="text-muted">Check back soon for new orders</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Pending Requests -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Pending Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_requests %}
+                        <div class="list-group">
+                            {% for request in pending_requests %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-0">Order #{{ request.order.id }}</h6>
+                                            <p class="text-muted mb-0 small">{{ request.order.restaurant.name }}</p>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small">Requested {{ request.created_at|timesince }} ago</span>
+                                        <a href="{% url 'orders:order_detail' pk=request.order.id %}" class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-hourglass-half fa-3x mb-3 text-muted"></i>
+                            <p>No pending delivery requests</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Active Deliveries -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Active Deliveries</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_deliveries %}
+                        <div class="list-group">
+                            {% for delivery in active_deliveries %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-0">Order #{{ delivery.id }}</h6>
+                                            <p class="text-muted mb-0 small">{{ delivery.restaurant.name }}</p>
+                                        </div>
+                                        <span class="badge {% if delivery.status == 'PICKED_UP' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                            {{ delivery.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small">${{ delivery.total_price }}</span>
+                                        <a href="{% url 'orders:order_detail' pk=delivery.id %}" class="btn btn-sm btn-primary">
+                                            Manage
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-motorcycle fa-3x mb-3 text-muted"></i>
+                            <p>No active deliveries</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Location sharing
+    function updateDriverLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                // Send current location to server
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                
+                const formData = new FormData();
+                formData.append('latitude', latitude);
+                formData.append('longitude', longitude);
+                
+                const updateLocationUrl = "{% url 'delivery:update_driver_location' %}";
+                fetch(updateLocationUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Location updated successfully');
+                })
+                .catch(error => {
+                    console.error('Error updating location:', error);
+                });
+            }, function(error) {
+                console.error('Error getting location:', error);
+            });
+        }
+    }
+    
+    // Update location periodically if driver is available
+    {% if user.driver_profile.is_available %}
+        updateDriverLocation();
+        setInterval(updateDriverLocation, 60000); // Update every minute
+    {% endif %}
+</script>
+{% endblock %}
+{% endblock %}

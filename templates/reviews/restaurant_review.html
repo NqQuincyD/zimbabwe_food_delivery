@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Review {{ restaurant.name }} - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">Review {{ restaurant.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                        <div>
+                            <h5 class="mb-0">{{ restaurant.name }}</h5>
+                            <p class="text-muted mb-0">{{ restaurant.address }}, {{ restaurant.city }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if orders %}
+                        <div class="mb-3">
+                            <label class="form-label">Select your order</label>
+                            <select class="form-select" id="order-select">
+                                <option value="">General review (not order-specific)</option>
+                                {% for order in orders %}
+                                    <option value="{{ order.id }}">Order #{{ order.id }} - {{ order.ordered_at|date:"M d, Y" }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if orders %}
+                            <input type="hidden" name="order_id" id="order-id-field">
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Overall Rating</label>
+                                <div class="rating-input text-center">
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            <input type="radio" name="rating" id="rating{{ i }}" value="{{ i }}" {% if i == "5" %}checked{% endif %}>
+                                            <label for="rating{{ i }}"><i class="far fa-star"></i></label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Food Quality</label>
+                                <div class="rating-input text-center">
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            <input type="radio" name="food_rating" id="food_rating{{ i }}" value="{{ i }}" {% if i == "5" %}checked{% endif %}>
+                                            <label for="food_rating{{ i }}"><i class="far fa-star"></i></label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Service Quality</label>
+                                <div class="rating-input text-center">
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            <input type="radio" name="service_rating" id="service_rating{{ i }}" value="{{ i }}" {% if i == "5" %}checked{% endif %}>
+                                            <label for="service_rating{{ i }}"><i class="far fa-star"></i></label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_comment" class="form-label">Your Review</label>
+                            <textarea name="comment" id="id_comment" rows="4" class="form-control" placeholder="Share your experience with this restaurant..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'restaurant_detail' slug=restaurant.slug %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rating-stars {
+        display: inline-flex;
+        flex-direction: row-reverse;
+    }
+    
+    .rating-stars input {
+        display: none;
+    }
+    
+    .rating-stars label {
+        cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0 0.2rem;
+        color: #ccc;
+    }
+    
+    .rating-stars input:checked ~ label,
+    .rating-stars label:hover,
+    .rating-stars label:hover ~ label {
+        color: #FFC107;
+    }
+    
+    .rating-stars input:checked ~ label i,
+    .rating-stars label:hover i,
+    .rating-stars label:hover ~ label i {
+        content: '\f005';
+        font-weight: 900;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Order selection handling
+        const orderSelect = document.getElementById('order-select');
+        const orderIdField = document.getElementById('order-id-field');
+        
+        if (orderSelect && orderIdField) {
+            orderSelect.addEventListener('change', function() {
+                orderIdField.value = this.value;
+            });
+        }
+        
+        // Star rating functionality
+        document.querySelectorAll('.rating-stars label').forEach(function(label) {
+            label.addEventListener('click', function() {
+                const input = document.getElementById(this.getAttribute('for'));
+                if (input) {
+                    input.checked = true;
+                    
+                    // Update star appearance
+                    const starsContainer = this.closest('.rating-stars');
+                    starsContainer.querySelectorAll('label i').forEach(function(star) {
+                        star.className = 'far fa-star';
+                    });
+                    
+                    let currentLabel = this;
+                    while (currentLabel) {
+                        currentLabel.querySelector('i').className = 'fas fa-star';
+                        currentLabel = currentLabel.nextElementSibling;
+                    }
+                }
+            });
+        });
+        
+        // Initialize stars based on initial values
+        document.querySelectorAll('.rating-stars input:checked').forEach(function(input) {
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            if (label) {
+                label.click();
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

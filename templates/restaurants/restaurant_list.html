@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Restaurants - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Restaurants</h2>
+    
+    <!-- Search and filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Search restaurants..." name="q" value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="city">
+                        <option value="">All Cities</option>
+                        {% for city in cities %}
+                            <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="sort">
+                        <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Top Rated</option>
+                        <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Alphabetical</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Results -->
+    <div class="row g-4">
+        {% if restaurants %}
+            {% for restaurant in restaurants %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card card-restaurant shadow-sm h-100">
+                        <img src="{{ restaurant.logo.url }}" class="card-img-top restaurant-logo" alt="{{ restaurant.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ restaurant.name }}</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="rating">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= restaurant.average_rating|floatformat:"0" %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-muted ms-1">{{ restaurant.average_rating|floatformat:1 }}</span>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ restaurant.review_count|default:"0" }} reviews</span>
+                            </div>
+                            <p class="card-text mb-1 text-muted">{{ restaurant.city }}</p>
+                            <p class="card-text mb-3">{{ restaurant.description|truncatechars:100 }}</p>
+                            
+                            <div class="d-flex justify-content-between">
+                                {% if restaurant.is_open %}
+                                    <span class="badge bg-success">Open</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Closed</span>
+                                {% endif %}
+                                <span class="text-muted small">{{ restaurant.delivery_radius }} km delivery radius</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="{% url 'restaurants:restaurant_detail' slug=restaurant.slug %}" class="btn btn-primary w-100">View Menu</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-store-slash fa-4x mb-3 text-muted"></i>
+                <h4>No restaurants found</h4>
+                <p class="text-muted">Try adjusting your search criteria</p>
+                <a href="{% url 'restaurants:restaurant_list' %}" class="btn btn-outline-primary mt-3">Clear Filters</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&laquo; First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Rate Delivery - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">Rate Your Delivery</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if order.driver.profile_picture %}
+                                <img src="{{ order.driver.profile_picture.url }}" alt="{{ order.driver.get_full_name }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                    <span class="h3 mb-0">{{ order.driver.get_full_name|default:order.driver.username|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">{{ order.driver.get_full_name|default:order.driver.username }}</h5>
+                                <p class="text-muted mb-0">Order #{{ order.id }} delivered {{ order.delivered_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-body bg-light">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ order.restaurant.logo.url }}" alt="{{ order.restaurant.name }}" class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <div>
+                                        <h6 class="mb-0">{{ order.restaurant.name }}</h6>
+                                        <p class="mb-0 small text-muted">{{ order.items.count }} items, ${{ order.total_price }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Rate your delivery experience</label>
+                            <div class="rating-input text-center">
+                                <div class="btn-group" role="group" aria-label="Delivery rating">
+                                    <input type="radio" class="btn-check" name="rating" id="rating1" value="1">
+                                    <label class="btn btn-outline-warning" for="rating1">1</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating2" value="2">
+                                    <label class="btn btn-outline-warning" for="rating2">2</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating3" value="3">
+                                    <label class="btn btn-outline-warning" for="rating3">3</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating4" value="4">
+                                    <label class="btn btn-outline-warning" for="rating4">4</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating5" value="5" checked>
+                                    <label class="btn btn-outline-warning" for="rating5">5</label>
+                                </div>
+                                <div class="form-text text-center mt-2">Rate from 1 (poor) to 5 (excellent)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_comment" class="form-label">Comments (optional)</label>
+                            <textarea name="comment" id="id_comment" rows="3" class="form-control" placeholder="Share your experience with the delivery driver..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'order_detail' pk=order.id %}" class="btn btn-outline-secondary">Back to Order</a>
+                            <button type="submit" class="btn btn-primary">Submit Rating</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Highlight selected rating
+    document.querySelectorAll('input[name="rating"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.btn-outline-warning').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            
+            for (let i = 1; i <= parseInt(this.value); i++) {
+                document.querySelector(`label[for="rating${i}"]`).classList.add('active');
+            }
+        });
+    });
+    
+    // Initialize with selected rating
+    document.querySelector('input[name="rating"]:checked').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}
+{% endblock %}

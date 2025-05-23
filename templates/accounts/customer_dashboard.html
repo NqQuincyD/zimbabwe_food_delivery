@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Dashboard - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, {{ user.get_full_name|default:user.username }}</h2>
+        <div class="badge bg-primary p-2">Customer Account</div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-utensils fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">Order Food</h4>
+                    <p class="card-text">Browse restaurants and order your favorite meals for delivery.</p>
+                    <a href="#" class="btn btn-primary">Browse Restaurants</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">My Orders</h4>
+                    <p class="card-text">View your order history and track current deliveries.</p>
+                    <a href="#" class="btn btn-primary">View Orders</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">My Profile</h4>
+                    <p class="card-text">Manage your profile details, addresses, and preferences.</p>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-primary">Update Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Recent Orders</h5>
+        </div>
+        <div class="card-body">
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-bag fa-3x mb-3 text-muted"></i>
+                <h5>No recent orders</h5>
+                <p class="text-muted">Your order history will appear here</p>
+                <a href="#" class="btn btn-primary mt-2">Place an Order</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

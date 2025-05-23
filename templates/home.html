@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block title %}Zimbabwe Food Delivery - Order Food Online{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">Delicious Food Delivered</h1>
+                <p class="lead mb-4">Order from the best Zimbabwean restaurants and get your favorite local dishes delivered right to your door.</p>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="{% url 'restaurants:restaurant_list' %}" class="btn btn-primary btn-lg px-4">Order Now</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-outline-secondary btn-lg px-4">Sign Up</a>
+                </div>
+            </div>
+            <div class="col-lg-6 mt-4 mt-lg-0">
+                <div class="ratio ratio-16x9 rounded overflow-hidden shadow">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&h=650&q=80" alt="Delicious Food" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- How It Works Section -->
+    <section class="py-5">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-store fa-2x"></i>
+                        </div>
+                        <h4 class="card-title">Find Restaurant</h4>
+                        <p class="card-text">Browse through our curated list of the best Zimbabwean restaurants near you.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-utensils fa-2x"></i>
+                        </div>
+                        <h4 class="card-title">Choose Meals</h4>
+                        <p class="card-text">Select from a variety of delicious meals, sides, and beverages.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-motorcycle fa-2x"></i>
+                        </div>
+                        <h4 class="card-title">Enjoy Delivery</h4>
+                        <p class="card-text">Track your order in real-time as it makes its way to your doorstep.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Featured Restaurants Section -->
+    {% if featured_restaurants %}
+    <section class="py-5">
+        <h2 class="text-center mb-4">Featured Restaurants</h2>
+        <div class="row g-4">
+            {% for restaurant in featured_restaurants %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-restaurant shadow-sm h-100">
+                    <img src="{{ restaurant.logo.url }}" class="card-img-top restaurant-logo" alt="{{ restaurant.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ restaurant.name }}</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="rating">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= restaurant.average_rating|floatformat:"0" %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif forloop.counter <= restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="text-muted ms-1">{{ restaurant.average_rating|floatformat:1 }}</span>
+                            </div>
+                            <span class="badge bg-light text-dark">{{ restaurant.review_count }} reviews</span>
+                        </div>
+                        <p class="card-text text-muted">{{ restaurant.city }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="{% url 'restaurants:restaurant_detail' slug=restaurant.slug %}" class="btn btn-sm btn-primary w-100">View Menu</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'restaurants:restaurant_list' %}" class="btn btn-outline-primary">View All Restaurants</a>
+        </div>
+    </section>
+    {% endif %}
+    
+    <!-- Popular Categories Section -->
+    <section class="py-5">
+        <h2 class="text-center mb-4">Popular Categories</h2>
+        <div class="row g-4">
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'restaurants:restaurant_list' %}?category=Traditional" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                                <i class="fas fa-drumstick-bite fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Traditional</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'restaurants:restaurant_list' %}?category=Fast Food" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                                <i class="fas fa-hamburger fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Fast Food</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'restaurants:restaurant_list' %}?category=Vegetarian" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                                <i class="fas fa-leaf fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Vegetarian</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'restaurants:restaurant_list' %}?category=Drinks" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                                <i class="fas fa-cocktail fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Drinks</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'restaurants:restaurant_list' %}?category=Desserts" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                                <i class="fas fa-ice-cream fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Desserts</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'restaurants:restaurant_list' %}?category=International" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                                <i class="fas fa-globe-africa fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">International</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Testimonials Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">What Our Customers Say</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="rating mb-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <p class="card-text">"The food was amazing and delivery was super fast! I ordered sadza and nyama and it was just like my grandmother makes it. Will definitely order again!"</p>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <span class="fw-bold">TM</span>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Tendai Moyo</h6>
+                                    <small class="text-muted">Harare</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="rating mb-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <p class="card-text">"I love how easy it is to find local restaurants and order traditional Zimbabwean food. The delivery tracking is accurate and the drivers are always friendly."</p>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <span class="fw-bold">CM</span>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Chipo Mhaka</h6>
+                                    <small class="text-muted">Bulawayo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="rating mb-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <p class="card-text">"As a restaurant owner, this platform has helped me reach so many more customers. The system is easy to use and the fees are reasonable. Highly recommend!"</p>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <span class="fw-bold">BN</span>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Blessing Nyathi</h6>
+                                    <small class="text-muted">Restaurant Owner</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- App Download Section -->
+    <section class="py-5">
+        <div class="row align-items-center">
+            <div class="col-md-6 order-md-2">
+                <h2 class="mb-3">Download Our App</h2>
+                <p class="lead mb-4">Get the Zimbabwe Food Delivery app for faster ordering, exclusive deals, and real-time delivery tracking.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="#" class="btn btn-dark btn-lg">
+                        <i class="fab fa-apple me-2"></i>App Store
+                    </a>
+                    <a href="#" class="btn btn-dark btn-lg">
+                        <i class="fab fa-google-play me-2"></i>Google Play
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 order-md-1 mt-4 mt-md-0">
+                <div class="text-center">
+                    <img src="https://via.placeholder.com/400x550" alt="Mobile App" class="img-fluid rounded shadow" style="max-width: 300px;">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Join as Restaurant or Driver -->
+    <section class="py-5 bg-light">
+        <h2 class="text-center mb-5">Join Our Platform</h2>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-store fa-2x"></i>
+                        </div>
+                        <h3 class="card-title">Restaurant Owner?</h3>
+                        <p class="card-text">Join our platform to reach more customers and grow your business. Easy to use dashboard, fair commission rates, and dedicated support.</p>
+                        <a href="{% url 'account_signup' %}" class="btn btn-primary">Register Your Restaurant</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-motorcycle fa-2x"></i>
+                        </div>
+                        <h3 class="card-title">Become a Delivery Driver</h3>
+                        <p class="card-text">Flexible hours, competitive pay, and weekly payouts. Be your own boss and earn extra income on your own schedule.</p>
+                        <a href="{% url 'account_signup' %}" class="btn btn-primary">Apply as Driver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

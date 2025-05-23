@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ restaurant.name }} - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Restaurant header with cover image -->
+    <div class="restaurant-header position-relative">
+        {% if restaurant.cover_photo %}
+            <div style="height: 250px; background-image: url('{{ restaurant.cover_photo.url }}'); background-size: cover; background-position: center;"></div>
+        {% else %}
+            <div style="height: 250px; background-color: #f8f9fa;"></div>
+        {% endif %}
+        
+        <div class="container position-relative" style="margin-top: -80px;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-end mb-3">
+                        <img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="rounded-3 border shadow" style="width: 120px; height: 120px; object-fit: cover; z-index: 1;">
+                        <div class="ms-3">
+                            <h1 class="mb-1">{{ restaurant.name }}</h1>
+                            <div class="d-flex align-items-center">
+                                <div class="rating me-3">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= restaurant.average_rating|floatformat:"0" %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-muted ms-1">{{ restaurant.average_rating|floatformat:1 }}</span>
+                                </div>
+                                <span class="text-muted">{{ review_count }} reviews</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    {% if restaurant.is_open %}
+                        <span class="badge bg-success p-2">Open Now</span>
+                    {% else %}
+                        <span class="badge bg-danger p-2">Closed</span>
+                    {% endif %}
+                    
+                    {% if user.is_authenticated and user.user_type == 'CUSTOMER' %}
+                        {% if user.customer_profile.favorite_restaurants.all|length > 0 and restaurant in user.customer_profile.favorite_restaurants.all %}
+                            <button class="btn btn-outline-danger ms-2">
+                                <i class="fas fa-heart"></i> Favorited
+                            </button>
+                        {% else %}
+                            <button class="btn btn-outline-primary ms-2">
+                                <i class="far fa-heart"></i> Add to Favorites
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Restaurant info and menu tabs -->
+                <ul class="nav nav-tabs mb-4" id="restaurantTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="menu-tab" data-bs-toggle="tab" data-bs-target="#menu-tab-pane" type="button" role="tab" aria-controls="menu-tab-pane" aria-selected="true">Menu</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button" role="tab" aria-controls="info-tab-pane" aria-selected="false">Information</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane" type="button" role="tab" aria-controls="reviews-tab-pane" aria-selected="false">Reviews</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="restaurantTabContent">
+                    <!-- Menu Tab -->
+                    <div class="tab-pane fade show active" id="menu-tab-pane" role="tabpanel" aria-labelledby="menu-tab" tabindex="0">
+                        {% if menu_by_category %}
+                            {% for category, items in menu_by_category.items %}
+                                <div class="menu-category mb-4">
+                                    <h4 class="mb-3">{{ category.name }}</h4>
+                                    <div class="row g-3">
+                                        {% for item in items %}
+                                            <div class="col-md-6">
+                                                <div class="card h-100">
+                                                    <div class="row g-0">
+                                                        {% if item.image %}
+                                                            <div class="col-4">
+                                                                <img src="{{ item.image.url }}" class="img-fluid rounded-start h-100" alt="{{ item.name }}" style="object-fit: cover;">
+                                                            </div>
+                                                            <div class="col-8">
+                                                        {% else %}
+                                                            <div class="col-12">
+                                                        {% endif %}
+                                                                <div class="card-body">
+                                                                    <div class="d-flex justify-content-between align-items-start">
+                                                                        <h5 class="card-title">{{ item.name }}</h5>
+                                                                        <span class="fw-bold">${{ item.price }}</span>
+                                                                    </div>
+                                                                    
+                                                                    <p class="card-text text-muted">{{ item.description|truncatechars:80 }}</p>
+                                                                    
+                                                                    <div class="d-flex">
+                                                                        {% if item.is_vegetarian %}
+                                                                            <span class="badge bg-success me-1">Vegetarian</span>
+                                                                        {% endif %}
+                                                                        {% if item.is_vegan %}
+                                                                            <span class="badge bg-success me-1">Vegan</span>
+                                                                        {% endif %}
+                                                                        {% if item.is_featured %}
+                                                                            <span class="badge bg-warning text-dark">Featured</span>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    
+                                                                    <form method="post" action="{% url 'orders:add_to_cart' menu_item_id=item.id %}" class="mt-2">
+                                                                        {% csrf_token %}
+                                                                        <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+                                                                        <div class="input-group">
+                                                                            <input type="number" class="form-control form-control-sm" name="quantity" value="1" min="1" style="max-width: 80px;">
+                                                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                                                <i class="fas fa-cart-plus"></i> Add
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-utensils fa-3x mb-3 text-muted"></i>
+                                <h5>No menu items available</h5>
+                                <p class="text-muted">This restaurant hasn't added any menu items yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Information Tab -->
+                    <div class="tab-pane fade" id="info-tab-pane" role="tabpanel" aria-labelledby="info-tab" tabindex="0">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">About</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>{{ restaurant.description }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Contact Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-map-marker-alt me-2"></i> {{ restaurant.address }}, {{ restaurant.city }}</p>
+                                        <p><i class="fas fa-phone me-2"></i> {{ restaurant.phone_number }}</p>
+                                        <p><i class="fas fa-envelope me-2"></i> {{ restaurant.email }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Operating Hours</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if hours %}
+                                            <ul class="list-group list-group-flush">
+                                                {% for hour in hours %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <span>{{ hour.get_day_display }}</span>
+                                                        {% if hour.is_closed %}
+                                                            <span>Closed</span>
+                                                        {% else %}
+                                                            <span>{{ hour.opening_time|time:"g:i A" }} - {{ hour.closing_time|time:"g:i A" }}</span>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <p class="text-muted text-center py-3">No operating hours information available</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Location</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="map" style="height: 300px;">
+                                            <!-- This would be replaced with an actual map -->
+                                            <img src="https://maps.googleapis.com/maps/api/staticmap?center={{ restaurant.latitude }},{{ restaurant.longitude }}&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C{{ restaurant.latitude }},{{ restaurant.longitude }}&key=YOUR_API_KEY" class="img-fluid w-100" alt="Map">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reviews Tab -->
+                    <div class="tab-pane fade" id="reviews-tab-pane" role="tabpanel" aria-labelledby="reviews-tab" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>Customer Reviews</h4>
+                            {% if user.is_authenticated and user.user_type == 'CUSTOMER' %}
+                                <a href="{% url 'reviews:restaurant_review' restaurant_id=restaurant.id %}" class="btn btn-primary">
+                                    <i class="fas fa-star me-1"></i> Write a Review
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        {% if reviews %}
+                            <div class="mb-4">
+                                <div class="row">
+                                    <div class="col-md-4 text-center">
+                                        <div class="display-4 mb-2">{{ restaurant.average_rating|floatformat:1 }}</div>
+                                        <div class="rating mb-3">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= restaurant.average_rating|floatformat:"0" %}
+                                                    <i class="fas fa-star fa-lg"></i>
+                                                {% elif forloop.counter <= restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                                    <i class="fas fa-star-half-alt fa-lg"></i>
+                                                {% else %}
+                                                    <i class="far fa-star fa-lg"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <p class="text-muted">Based on {{ review_count }} reviews</p>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <!-- Rating breakdown would go here -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="reviews">
+                                {% for review in reviews %}
+                                    <div class="review mb-4">
+                                        <div class="d-flex mb-2">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                                <span class="fw-bold">{{ review.user.get_full_name|default:review.user.username|first|upper }}</span>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-0">{{ review.user.get_full_name|default:review.user.username }}</h5>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rating me-2">
+                                                        {% for i in "12345" %}
+                                                            {% if forloop.counter <= review.rating %}
+                                                                <i class="fas fa-star"></i>
+                                                            {% else %}
+                                                                <i class="far fa-star"></i>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                    <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="ps-5 ms-3">
+                                            <p>{{ review.comment }}</p>
+                                            <div class="d-flex gap-3 text-muted small mb-3">
+                                                <span><strong>Food:</strong> {{ review.food_rating }}/5</span>
+                                                <span><strong>Service:</strong> {{ review.service_rating }}/5</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                
+                                {% if review_count > 5 %}
+                                    <div class="text-center">
+                                        <a href="#" class="btn btn-outline-primary">View All {{ review_count }} Reviews</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="far fa-comment fa-3x mb-3 text-muted"></i>
+                                <h5>No reviews yet</h5>
+                                <p class="text-muted">Be the first to review this restaurant</p>
+                                {% if user.is_authenticated and user.user_type == 'CUSTOMER' %}
+                                    <a href="{% url 'reviews:restaurant_review' restaurant_id=restaurant.id %}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-star me-1"></i> Write a Review
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mt-4 mt-lg-0">
+                <div class="card shadow-sm sticky-top" style="top: 1rem; z-index: 100;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Your Order</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user.is_authenticated and user.user_type == 'CUSTOMER' %}
+                        {% with cart=request.session.cart|default_if_none:"" %}
+                            {% if cart and cart|length > 0 %}
+                                {% if request.session.cart_restaurant_id == restaurant.id %}
+                                    <div class="mb-3">
+                                        <h6>Items in Cart:</h6>
+                                        <ul class="list-group list-group-flush">
+                                            {% for item_id, item_data in request.session.cart.items %}
+                                                <li class="list-group-item px-0 py-2 d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <span class="fw-semibold">{{ item_data.quantity }}x</span>
+                                                        {{ item_data.menu_item_name }}
+                                                    </div>
+                                                    <span>${{ item_data.total_price }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'orders:cart' %}" class="btn btn-primary">
+                                            <i class="fas fa-shopping-cart me-2"></i>View Cart
+                                        </a>
+                                        <a href="{% url 'orders:checkout' %}" class="btn btn-success">
+                                            <i class="fas fa-check me-2"></i>Checkout
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning" role="alert">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <p class="mb-0">You have items in your cart from another restaurant.</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'orders:cart' %}" class="btn btn-outline-primary flex-grow-1">View Cart</a>
+                                        <a href="{% url 'orders:clear_cart' %}" class="btn btn-danger flex-grow-1">Clear Cart</a>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-shopping-basket fa-3x mb-3 text-muted"></i>
+                                    <h5>Your cart is empty</h5>
+                                    <p class="text-muted">Add items from the menu to start your order</p>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-user-circle fa-3x mb-3 text-muted"></i>
+                                <h5>Sign in to place an order</h5>
+                                <div class="d-grid gap-2 mt-3">
+                                    <a href="{% url 'account_login' %}" class="btn btn-primary">Log In</a>
+                                    <a href="{% url 'account_signup' %}" class="btn btn-outline-primary">Sign Up</a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Cart - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Your Cart</h2>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            {% if cart_items %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Items in Cart</h5>
+                        <span class="badge bg-primary">{{ cart_items|length }} items</span>
+                    </div>
+                    <div class="card-body">
+                        {% for item in cart_items %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2 text-center">
+                                            {% if item.menu_item.image %}
+                                                <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" class="img-fluid rounded" style="max-height: 80px;">
+                                            {% else %}
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                                    <i class="fas fa-utensils fa-2x text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title">{{ item.menu_item.name }}</h5>
+                                            <p class="card-text text-muted mb-1">{{ item.menu_item.description|truncatechars:80 }}</p>
+                                            {% if item.option_choices %}
+                                                <div class="mt-1">
+                                                    {% for choice in item.option_choices %}
+                                                        <span class="badge bg-light text-dark me-1">
+                                                            {{ choice.option.name }}: {{ choice.value }}
+                                                            {% if choice.additional_price > 0 %}
+                                                                (+${{ choice.additional_price }})
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            {% if item.special_instructions %}
+                                                <p class="card-text small mt-2">
+                                                    <strong>Special instructions:</strong> {{ item.special_instructions }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-2 text-center">
+                                            <div class="fw-bold">${{ item.menu_item.price }} x {{ item.quantity }}</div>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <div class="fw-bold mb-2">${{ item.total_price }}</div>
+                                            <a href="{% url 'orders:remove_from_cart' item_id=item.id %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash-alt me-1"></i> Remove
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-4">
+                    <a href="{% url 'restaurants:restaurant_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i> Continue Shopping
+                    </a>
+                    <a href="{% url 'orders:clear_cart' %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash-alt me-2"></i> Clear Cart
+                    </a>
+                </div>
+            {% else %}
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-shopping-cart fa-4x mb-3 text-muted"></i>
+                        <h3>Your cart is empty</h3>
+                        <p class="text-muted mb-4">Add items from restaurants to get started</p>
+                        <a href="{% url 'restaurants:restaurant_list' %}" class="btn btn-primary">
+                            <i class="fas fa-utensils me-2"></i> Browse Restaurants
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            {% if cart_items %}
+                <div class="card shadow-sm sticky-top" style="top: 1rem;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal</span>
+                                <span>${{ subtotal }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Delivery Fee</span>
+                                <span>${{ delivery_fee }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total</span>
+                                <span>${{ total }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <a href="{% url 'orders:checkout' %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-2"></i> Proceed to Checkout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Restaurant</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <h5 class="mb-1">{{ restaurant.name }}</h5>
+                                <div class="rating">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= restaurant.average_rating|floatformat:"0" %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= restaurant.average_rating|add:"0.5"|floatformat:"0" %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-muted ms-1">{{ restaurant.average_rating|floatformat:1 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-grid">
+                            <a href="{% url 'restaurants:restaurant_detail' slug=restaurant.slug %}" class="btn btn-outline-primary">
+                                View Restaurant
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

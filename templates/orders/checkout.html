@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Checkout - Zimbabwe Food Delivery{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Checkout</h2>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Delivery Address</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="checkout-form">
+                        {% csrf_token %}
+                        
+                        {% if addresses %}
+                            <div class="mb-4">
+                                <div class="row">
+                                    {% for address in addresses %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check card {% if form.delivery_address.value|stringformat:'i' == address.id|stringformat:'i' %}border-primary{% endif %}">
+                                                <div class="card-body">
+                                                    <input class="form-check-input" type="radio" name="delivery_address" id="address_{{ address.id }}" value="{{ address.id }}" {% if form.delivery_address.value|stringformat:'i' == address.id|stringformat:'i' %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="address_{{ address.id }}">
+                                                        <h6 class="mb-1">{{ address.name }}</h6>
+                                                        <p class="mb-0 text-muted small">
+                                                            {{ address.street }}<br>
+                                                            {{ address.city }}, {{ address.state_province }}
+                                                            {% if address.landmark %}<br>Landmark: {{ address.landmark }}{% endif %}
+                                                        </p>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-end">
+                                    <a href="{% url 'accounts:address_create' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-plus me-1"></i> Add New Address
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning mb-3">
+                                <p class="mb-0">You don't have any saved addresses. Please add one to continue.</p>
+                            </div>
+                            <div class="text-center mb-3">
+                                <a href="{% url 'accounts:address_create' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i> Add Delivery Address
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="delivery_instructions" class="form-label">Delivery Instructions (optional)</label>
+                            <textarea class="form-control" id="delivery_instructions" name="delivery_instructions" rows="2" placeholder="E.g., building entrance code, landmark, etc.">{{ form.delivery_instructions.value|default:'' }}</textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ item.menu_item.name }}</div>
+                                            {% if item.option_choices %}
+                                                <div class="small text-muted">
+                                                    {% for choice in item.option_choices %}
+                                                        {{ choice.option.name }}: {{ choice.value }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            {% if item.special_instructions %}
+                                                <div class="small text-muted">Special: {{ item.special_instructions }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end">${{ item.total_price }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Payment Method</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check card">
+                                <div class="card-body">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_cash" value="CASH" form="checkout-form" checked>
+                                    <label class="form-check-label w-100" for="payment_cash">
+                                        <div class="text-center">
+                                            <i class="fas fa-money-bill-wave fa-2x mb-2 text-success"></i>
+                                            <h6>Cash on Delivery</h6>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check card">
+                                <div class="card-body">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_ecocash" value="ECOCASH" form="checkout-form">
+                                    <label class="form-check-label w-100" for="payment_ecocash">
+                                        <div class="text-center">
+                                            <i class="fas fa-mobile-alt fa-2x mb-2 text-primary"></i>
+                                            <h6>EcoCash</h6>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check card">
+                                <div class="card-body">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="CARD" form="checkout-form">
+                                    <label class="form-check-label w-100" for="payment_card">
+                                        <div class="text-center">
+                                            <i class="far fa-credit-card fa-2x mb-2 text-info"></i>
+                                            <h6>Credit/Debit Card</h6>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="ecocash_details" class="payment-details mt-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <p class="mb-0">You'll receive an EcoCash payment prompt when your order is confirmed.</p>
+                        </div>
+                    </div>
+                    
+                    <div id="card_details" class="payment-details mt-3" style="display: none;">
+                        <div class="mb-3">
+                            <label for="card_number" class="form-label">Card Number</label>
+                            <input type="text" class="form-control" id="card_number" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="expiry_date" class="form-label">Expiry Date</label>
+                                <input type="text" class="form-control" id="expiry_date" placeholder="MM/YY">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="text" class="form-control" id="cvv" placeholder="123">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 1rem;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Items Subtotal</span>
+                            <span>${{ subtotal }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Fee</span>
+                            <span>${{ delivery_fee }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total</span>
+                            <span>${{ total }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" form="checkout-form" class="btn btn-success btn-lg">
+                            <i class="fas fa-check me-2"></i> Place Order
+                        </button>
+                        <a href="{% url 'orders:cart' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Cart
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                        <div>
+                            <h6 class="mb-0">{{ restaurant.name }}</h6>
+                            <div class="small text-muted">{{ cart_items|length }} items</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Show/hide payment details based on selected method
+    document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.payment-details').forEach(function(div) {
+                div.style.display = 'none';
+            });
+            
+            if (this.value === 'ECOCASH') {
+                document.getElementById('ecocash_details').style.display = 'block';
+            } else if (this.value === 'CARD') {
+                document.getElementById('card_details').style.display = 'block';
+            }
+        });
+    });
+    
+    // Highlight selected address card
+    document.querySelectorAll('input[name="delivery_address"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.form-check.card').forEach(function(card) {
+                card.classList.remove('border-primary');
+            });
+            
+            this.closest('.form-check.card').classList.add('border-primary');
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
